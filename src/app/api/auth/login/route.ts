@@ -23,8 +23,11 @@ export async function POST(req: NextRequest) {
     const url = await client.authorize(handle, { state });
     return NextResponse.redirect(url.toString(), 303);
   } catch (e) {
-    log.warn("login: authorize failed", { handle, error: errMessage(e) });
-    return NextResponse.redirect(appUrl("/login?error=resolve"), 303);
+    const name = e instanceof Error ? e.name : "";
+    log.warn("login: authorize failed", { handle, error: errMessage(e), name });
+    // Only identity resolution failures are the user's problem; everything else is ours.
+    const code = name === "OAuthResolverError" || /resolve/i.test(errMessage(e)) ? "resolve" : "config";
+    return NextResponse.redirect(appUrl(`/login?error=${code}`), 303);
   }
 }
 

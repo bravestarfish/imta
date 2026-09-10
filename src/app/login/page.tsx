@@ -8,6 +8,7 @@ const errors: Record<string, string> = {
   resolve: "We could not find that handle. Check the spelling, e.g. name.bsky.social or name.eurosky.social.",
   callback: "Sign-in was not completed. Try again.",
   ratelimited: "Too many attempts. Wait a few minutes and try again.",
+  config: "Sign-in is not working right now because of a server-side configuration problem. The operator has been notified in the logs.",
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {

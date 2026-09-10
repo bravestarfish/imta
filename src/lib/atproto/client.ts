@@ -114,7 +114,8 @@ async function build(): Promise<NodeOAuthClient> {
   const keys = await Promise.all(
     [e.ATPROTO_PRIVATE_KEY_1, e.ATPROTO_PRIVATE_KEY_2, e.ATPROTO_PRIVATE_KEY_3]
       .filter((k): k is string => Boolean(k))
-      .map((k, i) => JoseKey.fromImportable(k, `imta-key-${i + 1}`)),
+      // Keys from `pnpm keygen` carry their own kid; passing another one is rejected.
+      .map((k) => JoseKey.fromImportable(k)),
   );
   if (keys.length === 0) {
     throw new Error("ATPROTO_PRIVATE_KEY_1 is required (run `pnpm keygen`)");
@@ -125,7 +126,6 @@ async function build(): Promise<NodeOAuthClient> {
       client_id: appUrl("/oauth-client-metadata.json"),
       client_name: e.APP_NAME,
       client_uri: appUrl("/"),
-      logo_uri: appUrl("/icon.png"),
       tos_uri: appUrl("/terms"),
       policy_uri: appUrl("/privacy"),
       redirect_uris: [redirectUri],
