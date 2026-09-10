@@ -44,7 +44,11 @@ if [ ! -f .env ]; then
   echo "DOMAIN=imta.rsvp" >> .env
   echo "== generating ATProto signing key (takes a minute: builds the worker image)"
   docker compose build worker >/dev/null
-  KEY=$(docker compose run --rm --no-deps worker pnpm --silent keygen | tail -1)
+  KEY=$(docker compose run --rm --no-deps worker pnpm --silent keygen | grep '^{' | tail -1)
+  if [ -z "$KEY" ]; then
+    echo "ERROR: key generation failed. Run: docker compose run --rm --no-deps worker pnpm --silent keygen"
+    echo "and paste the JSON into ATPROTO_PRIVATE_KEY_1 in $DIR/.env (single-quoted)."
+  fi
   sed -i "s|^ATPROTO_PRIVATE_KEY_1=.*|ATPROTO_PRIVATE_KEY_1='$KEY'|" .env
   echo "Wrote $DIR/.env with generated secrets. Fill in SMTP_URL, GOOGLE_*, MICROSOFT_*, ZOOM_* then run:"
   echo "  cd $DIR && docker compose up -d --build && docker compose run --rm worker pnpm db:migrate"

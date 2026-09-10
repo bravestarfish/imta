@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM node:22-bookworm-slim AS base
-ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
-RUN corepack enable
+# COREPACK_HOME keeps the pnpm binary inside the image so runtime stages never download it.
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH COREPACK_HOME=/pnpm/corepack
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 FROM base AS deps
 WORKDIR /app
@@ -31,6 +32,6 @@ FROM deps AS worker
 WORKDIR /app
 ENV NODE_ENV=production
 COPY . .
-RUN groupadd -r app && useradd -r -g app app && chown -R app:app /app
+RUN groupadd -r app && useradd -r -m -g app app && chown -R app:app /app /pnpm
 USER app
 CMD ["pnpm", "worker"]
