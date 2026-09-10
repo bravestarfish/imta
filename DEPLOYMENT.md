@@ -11,15 +11,41 @@ regions but you must pick them explicitly.
 Keep the database on the same box for now (nightly `pg_dump` to object storage
 in the EU). Move to a managed EU Postgres later if needed.
 
-### Steps
+### UpCloud walkthrough
 
-1. DNS: point `imta.rsvp` at the server.
-2. Copy the repo, then `cp .env.example .env` and fill it in (see below).
-3. `docker compose up -d --build`
-4. `docker compose run --rm worker pnpm db:migrate`
-5. Open `https://imta.rsvp`. Caddy obtains the TLS certificate automatically.
+1. **Create the server.** UpCloud Hub → Deploy server. Zone `de-fra1`
+   (Frankfurt), `fi-hel1` (Helsinki) or `nl-ams1`. Plan: General Purpose 2
+   vCPU / 4 GB is comfortable for an alpha (1 vCPU / 2 GB works but builds
+   are slow). OS: Ubuntu 24.04. Add your SSH key. Enable automatic backups
+   (daily) in the server's Backups tab.
+2. **DNS.** Create an `A` record for `imta.rsvp` pointing at the server's
+   public IPv4 (and `AAAA` for IPv6 if you like). Wait until it resolves;
+   Caddy needs it to issue the certificate.
+3. **Bootstrap.** SSH in as root and run:
 
-Upgrades: pull, `docker compose up -d --build`, run migrations again.
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/bravestarfish/imta/main/scripts/bootstrap-server.sh | bash
+   ```
+
+   This installs Docker, opens ports 22/80/443 in ufw, clones the repo to
+   `/opt/imta`, and writes `/opt/imta/.env` with generated `ENCRYPTION_KEY`,
+   `WEBHOOK_SECRET`, `POSTGRES_PASSWORD` and `ATPROTO_PRIVATE_KEY_1`.
+4. **Fill in the rest of `.env`:** `SMTP_URL` / `EMAIL_FROM`, and the
+   Google, Microsoft and Zoom client ids and secrets (table below). Missing
+   providers are simply hidden in the UI, so you can start with SMTP only.
+5. **Start and migrate:**
+
+   ```bash
+   cd /opt/imta
+   docker compose up -d --build
+   docker compose run --rm worker pnpm db:migrate
+   ```
+
+6. Open `https://imta.rsvp`, sign in with your handle, complete onboarding.
+   Check `https://imta.rsvp/oauth-client-metadata.json` loads with
+   `token_endpoint_auth_method: "private_key_jwt"`.
+
+Upgrades: `cd /opt/imta && git pull && docker compose up -d --build && docker compose run --rm worker pnpm db:migrate`.
 
 ### Environment
 
