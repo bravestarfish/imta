@@ -34,7 +34,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
           <Field label="Time zone">
             <TimezoneSelect name="timezone" defaultValue={user.timezone} />
           </Field>
-          <Field label="Display name" hint="Defaults to your ATProto profile name.">
+          <Field label="Display name" hint="Defaults to your Atmosphere profile name.">
             <input name="displayName" className="input" defaultValue={user.displayName ?? ""} />
           </Field>
           <Field label="Bio (public booking page)">
@@ -44,7 +44,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="publicProfile" defaultChecked={user.publicProfile} className="mt-1" />
           <span>
-            Public booking profile at <code>/@{user.handle}</code>. This also writes a <code>rsvp.imta.profile</code> record to your ATProto
+            Public booking profile at <code>/@{user.handle}</code>. This also writes a <code>rsvp.imta.profile</code> record to your Atmosphere
             repository so other apps can find your booking page. Only public event types are listed.
           </span>
         </label>
@@ -93,7 +93,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
           ))}
         </ul>
         <form action={addBlock} className="flex gap-2">
-          <input name="handle" className="input" placeholder="handle.bsky.social" />
+          <input name="handle" className="input" placeholder="username.bsky.social" />
           <button className="btn-secondary">Block</button>
         </form>
       </section>

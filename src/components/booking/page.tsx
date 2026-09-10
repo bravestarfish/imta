@@ -43,7 +43,7 @@ export async function BookingPage({ eventType, ownerUser, team, access, currentP
       {access === "link" ? <div className="card text-center text-sm text-muted">This event can only be booked through its private link.</div> : null}
       {access === "login" ? (
         <div className="card text-center">
-          <p className="text-sm">This event is by invitation. Sign in to check whether you were invited.</p>
+          <p className="text-sm">This event is by invitation. Sign in with your Atmosphere account to check whether you were invited.</p>
           <Link href={loginUrl} className="btn-primary mt-3">Sign in</Link>
           <p className="mt-2 text-xs text-muted">No account? <a className="underline" href={env().ATPROTO_SIGNUP_URL}>Create one on Eurosky</a>.</p>
         </div>

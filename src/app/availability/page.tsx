@@ -16,7 +16,7 @@ export default async function Availability() {
     <div>
       <PageHeader
         title="Availability"
-        description="Your weekly working hours. Event types use your default schedule unless you pick another one. Busy times from connected calendars are removed automatically."
+        description="Set weekly working hours, then fine-tune specific days in the week view by tapping half-hour cells. Busy times from connected calendars are removed automatically."
         actions={
           <form action={createScheduleAction} className="flex gap-2">
             <input name="name" className="input" placeholder="e.g. Evenings" />
@@ -26,9 +26,9 @@ export default async function Availability() {
       />
       <div className="grid gap-4 sm:grid-cols-2">
         {schedules.map((s) => (
-          <Link key={s.id} href={`/availability/${s.id}`} className="card block hover:border-accent">
+          <div key={s.id} className="card">
             <div className="flex items-center justify-between">
-              <span className="font-medium">{s.name}</span>
+              <Link href={`/availability/${s.id}`} className="font-medium hover:underline">{s.name}</Link>
               {s.isDefault ? <Badge tone="accent">default</Badge> : null}
             </div>
             <div className="mt-1 text-xs text-muted">{s.timezone}</div>
@@ -44,7 +44,11 @@ export default async function Availability() {
               })}
             </ul>
             {s.overrides.length ? <div className="mt-2 text-xs text-muted">{s.overrides.length} date override{s.overrides.length > 1 ? "s" : ""}</div> : null}
-          </Link>
+            <div className="mt-3 flex gap-2">
+              <Link href={`/availability/${s.id}/calendar`} className="btn-primary px-2 py-1 text-xs">Week view</Link>
+              <Link href={`/availability/${s.id}`} className="btn-secondary px-2 py-1 text-xs">Weekly hours</Link>
+            </div>
+          </div>
         ))}
       </div>
     </div>

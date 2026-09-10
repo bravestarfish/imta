@@ -135,14 +135,14 @@ export function EventTypeForm({ id, ownerKind, ownerId, hosts, initial }: { id: 
         <label className="block">
           <span className="label">Visibility</span>
           <select className="input" value={f.visibility} onChange={(e) => set("visibility", e.target.value as Form["visibility"])}>
-            <option value="public">Public: listed on the booking profile and published to the ATProto repository</option>
+            <option value="public">Public: listed on the booking profile and published to your Atmosphere repository</option>
             <option value="link">Anyone with the link</option>
-            <option value="invite">Invitation only (specific ATProto accounts)</option>
+            <option value="invite">Invitation only (specific Atmosphere accounts)</option>
           </select>
         </label>
         {f.capacity > 1 && f.visibility === "public" ? (
           <label className="flex items-center gap-2 self-end text-sm">
-            <input type="checkbox" checked={f.publishSessions} onChange={(e) => set("publishSessions", e.target.checked)} /> Publish sessions as public ATProto calendar events (visible in atmo.rsvp and similar apps)
+            <input type="checkbox" checked={f.publishSessions} onChange={(e) => set("publishSessions", e.target.checked)} /> Publish sessions as public Atmosphere calendar events (visible in atmo.rsvp and similar apps)
           </label>
         ) : null}
       </section>

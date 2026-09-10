@@ -27,7 +27,7 @@ export default async function NewPoll({ searchParams }: { searchParams: Promise<
           </Field>
           <Field label="Duration (min)"><input name="durationMinutes" type="number" className="input" defaultValue={60} min={5} step={5} /></Field>
           <Field label="Time zone of the options"><TimezoneSelect name="timezone" defaultValue={user.timezone} /></Field>
-          <Field label="Other participants" hint="Handles, comma separated."><input name="participants" className="input" placeholder="a.bsky.social, b.eurosky.social" /></Field>
+          <Field label="Other participants" hint="Usernames, comma separated."><input name="participants" className="input" placeholder="a.bsky.social, b.eurosky.social" /></Field>
         </div>
         <fieldset>
           <legend className="label">Options</legend>

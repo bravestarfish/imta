@@ -37,3 +37,20 @@ export async function deleteScheduleAction(formData: FormData): Promise<void> {
   revalidatePath("/availability");
   redirect("/availability");
 }
+
+const painted = z.object({
+  scheduleId: z.string(),
+  days: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), cells: z.array(z.number().int().min(0).max(47)) })).max(31),
+});
+
+export async function savePaintedDaysAction(input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser();
+  const parsed = painted.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid input" };
+  const { savePaintedDays } = await import("@/lib/availability/service");
+  const err = await savePaintedDays(user.did, parsed.data.scheduleId, parsed.data.days);
+  if (err) return { ok: false, error: err };
+  revalidatePath("/availability");
+  revalidatePath(`/availability/${parsed.data.scheduleId}`);
+  return { ok: true };
+}

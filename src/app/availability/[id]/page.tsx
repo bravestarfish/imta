@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getSchedule } from "@/lib/availability/service";
@@ -17,12 +18,15 @@ export default async function EditSchedule({ params }: { params: Promise<{ id: s
         title={schedule.name}
         description="Set weekly hours and date-specific overrides. Times are in the schedule's time zone."
         actions={
-          !schedule.isDefault ? (
+          <>
+          <Link href={`/availability/${schedule.id}/calendar`} className="btn-secondary">Week view</Link>
+          {!schedule.isDefault ? (
             <form action={deleteScheduleAction}>
               <input type="hidden" name="id" value={schedule.id} />
               <button className="btn-danger">Delete</button>
             </form>
-          ) : null
+          ) : null}
+          </>
         }
       />
       <ScheduleEditor

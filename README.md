@@ -1,7 +1,7 @@
 # imta
 
 Scheduling and appointment booking for the open social web, built natively on
-[AT Protocol](https://atproto.com). Sign in with any ATProto account (Bluesky,
+[AT Protocol](https://atproto.com). Sign in with any Atmosphere account (Bluesky,
 Eurosky, your own PDS), publish when you are free, alone or as a team, and let
 people book you. Calendars stay private. Only what you choose to publish is
 written to your own repository.
@@ -22,8 +22,8 @@ written to your own repository.
   window, max per day, group sessions with seats, approval, cancellation notice,
   reschedule policy, custom questions, reminders.
 - **Access control:** public, anyone-with-the-link, or invitation-only for
-  specific ATProto accounts (stored by DID, so handle changes do not matter).
-  Booking always requires ATProto sign-in. Organizer block list and rate limits.
+  specific Atmosphere accounts (stored by DID, so username changes do not matter).
+  Booking always requires an Atmosphere sign-in. Organizer block list and rate limits.
 - **Calendars:** Google Calendar and Microsoft 365. Free/busy is read
   (start and end only), meetings are written to hosts' and attendees'
   calendars, and deleting the event in your calendar cancels the booking

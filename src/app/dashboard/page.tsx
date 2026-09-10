@@ -48,7 +48,7 @@ export default async function Dashboard() {
       ) : null}
       {!connections.length ? (
         <div className="card mb-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm">Connect Google Calendar or Microsoft 365 so bookings avoid your busy times and land in your calendar.</p>
+          <p className="text-sm">Mark when you are free in the <Link href="/availability" className="underline">week view</Link>, or connect Google Calendar or Microsoft 365 so bookings avoid your busy times automatically.</p>
           <Link href="/calendars" className="btn-primary">Connect a calendar</Link>
         </div>
       ) : null}

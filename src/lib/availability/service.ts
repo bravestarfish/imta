@@ -117,3 +117,32 @@ export async function hostAvailabilities(
     return { did: h.did, available: expandSchedule(sched, window), busy: busy.get(h.did) ?? [] };
   });
 }
+
+/**
+ * Persist painted days: each entry replaces the overrides for that date.
+ * Cells are half-hour indexes (0 = 00:00, 47 = 23:30) in the schedule's zone.
+ */
+export async function savePaintedDays(userDid: string, scheduleId: string, days: { date: string; cells: number[] }[]): Promise<string | null> {
+  const { overridesForPaintedDay, weekdayOf } = await import("./painter");
+  const schedule = await getSchedule(userDid, scheduleId);
+  if (!schedule) return "Schedule not found";
+  await db.transaction(async (tx) => {
+    for (const day of days) {
+      await tx.delete(schema.availabilityOverrides).where(and(eq(schema.availabilityOverrides.scheduleId, scheduleId), eq(schema.availabilityOverrides.date, day.date)));
+      const overrides = overridesForPaintedDay(schedule.rules, day.date, weekdayOf(day.date, schedule.timezone), day.cells);
+      if (overrides.length) {
+        await tx.insert(schema.availabilityOverrides).values(
+          overrides.map((o) => ({
+            id: newId("ovr"),
+            scheduleId,
+            date: o.date,
+            startMinutes: o.unavailable ? null : o.startMinutes ?? null,
+            endMinutes: o.unavailable ? null : o.endMinutes ?? null,
+            unavailable: Boolean(o.unavailable),
+          })),
+        );
+      }
+    }
+  });
+  return null;
+}

@@ -71,7 +71,7 @@ export async function completeOnboarding(formData: FormData): Promise<void> {
 export async function addBlock(formData: FormData): Promise<void> {
   const user = await requireUser();
   const id = await resolveIdentity(String(formData.get("handle") ?? ""));
-  if (!id) redirect("/settings?error=Could+not+resolve+that+handle");
+  if (!id) redirect("/settings?error=Could+not+find+that+username");
   await db.insert(schema.blocks).values({ userDid: user.did, blockedDid: id.did }).onConflictDoNothing();
   revalidatePath("/settings");
 }

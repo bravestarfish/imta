@@ -93,7 +93,7 @@ export function SlotPicker(p: SlotPickerProps) {
   if (!p.viewer && !p.reschedule) {
     return (
       <div className="card text-center">
-        <p className="text-sm">Sign in with your ATProto account to see available times and book.</p>
+        <p className="text-sm">Sign in with your Atmosphere account to see available times and book.</p>
         <a href={p.loginUrl} className="btn-primary mt-3">Sign in</a>
       </div>
     );

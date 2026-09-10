@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: { default: "imta", template: "%s · imta" },
-  description: "Scheduling for the open social web. Sign in with your ATProto account, share your availability, book meetings.",
+  description: "Scheduling for the open social web. Sign in with your Atmosphere account, share your availability, book meetings.",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

@@ -120,7 +120,7 @@ export default async function TeamPage({ params, searchParams }: { params: Promi
             <form action={inviteMemberAction} className="flex flex-wrap gap-2 border-t border-border pt-3">
               <input type="hidden" name="teamId" value={team.id} />
               <input type="hidden" name="slug" value={slug} />
-              <input name="handle" className="input flex-1" placeholder="handle.bsky.social" required />
+              <input name="handle" className="input flex-1" placeholder="username.bsky.social" required />
               <select name="role" className="input w-auto"><option value="member">member</option><option value="admin">admin</option></select>
               <button className="btn-secondary">Invite</button>
             </form>

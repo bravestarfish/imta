@@ -71,7 +71,7 @@ export async function inviteToTeam(actor: User, teamId: string, handleOrDid: str
   const members = await db.query.teamMembers.findMany({ where: eq(schema.teamMembers.teamId, teamId) });
   if (members.length >= MAX_TEAM_SIZE) return { ok: false, error: `Teams are limited to ${MAX_TEAM_SIZE} members` };
   const identity = await resolveIdentity(handleOrDid);
-  if (!identity) return { ok: false, error: "Could not resolve that handle" };
+  if (!identity) return { ok: false, error: "Could not find that username" };
   if (members.some((m) => m.userDid === identity.did)) return { ok: false, error: "Already a member" };
   const id = newId("tinv");
   await db

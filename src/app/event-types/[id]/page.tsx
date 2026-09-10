@@ -68,7 +68,7 @@ export default async function EditEventType({ params, searchParams }: { params: 
           ) : null}
           <form action={inviteAction} className="card grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <input type="hidden" name="eventTypeId" value={id} />
-            <input name="handle" className="input" placeholder="handle.bsky.social or did:plc:…" required />
+            <input name="handle" className="input" placeholder="username.bsky.social or did:plc:…" required />
             <input name="message" className="input" placeholder="Optional message" maxLength={300} />
             <button className="btn-primary">Invite</button>
             <p className="text-xs text-muted sm:col-span-3">Invitees get an email (if they have used imta) and a Bluesky DM from you, when their settings allow it.</p>

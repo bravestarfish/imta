@@ -11,7 +11,7 @@ export async function inviteToEventType(actor: User, eventTypeId: string, handle
   if (!et) return { ok: false, error: "Event not found" };
   await assertCanManage(actor, et.ownerKind, et.ownerKind === "user" ? et.ownerDid! : et.teamId!);
   const identity = await resolveIdentity(handleOrDid);
-  if (!identity) return { ok: false, error: "Could not resolve that handle" };
+  if (!identity) return { ok: false, error: "Could not find that username" };
   const id = newId("inv");
   await db
     .insert(schema.eventInvitations)
