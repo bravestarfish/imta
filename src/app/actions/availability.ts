@@ -54,3 +54,39 @@ export async function savePaintedDaysAction(input: unknown): Promise<{ ok: true 
   revalidatePath(`/availability/${parsed.data.scheduleId}`);
   return { ok: true };
 }
+
+const eventPaint = z.object({
+  eventTypeId: z.string(),
+  days: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), cells: z.array(z.number().int().min(0).max(47)) })).max(31),
+});
+
+export async function saveEventPaintAction(input: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser();
+  const parsed = eventPaint.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid input" };
+  const { saveEventPaint, hostPaintZone } = await import("@/lib/availability/service");
+  const err = await saveEventPaint(parsed.data.eventTypeId, user.did, await hostPaintZone(user.did), parsed.data.days);
+  if (err) return { ok: false, error: err };
+  revalidatePath(`/event-types/${parsed.data.eventTypeId}`);
+  return { ok: true };
+}
+
+export async function setEventAvailabilityModeAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const eventTypeId = String(formData.get("eventTypeId") ?? "");
+  const mode = formData.get("mode") === "painted" ? "painted" : "schedule";
+  const { setHostAvailabilityMode } = await import("@/lib/availability/service");
+  await setHostAvailabilityMode(eventTypeId, user.did, mode);
+  revalidatePath(`/event-types/${eventTypeId}`);
+  const week = String(formData.get("week") ?? "");
+  redirect(`/event-types/${eventTypeId}?tab=availability${/^\d{4}-\d{2}-\d{2}$/.test(week) ? `&week=${week}` : ""}`);
+}
+
+export async function clearEventPaintAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const eventTypeId = String(formData.get("eventTypeId") ?? "");
+  const { clearEventPaint } = await import("@/lib/availability/service");
+  await clearEventPaint(eventTypeId, user.did);
+  revalidatePath(`/event-types/${eventTypeId}`);
+  redirect(`/event-types/${eventTypeId}?tab=availability`);
+}

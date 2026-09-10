@@ -336,9 +336,35 @@ export const eventTypeHosts = pgTable(
     scheduleId: text("schedule_id").references(() => availabilitySchedules.id, { onDelete: "set null" }),
     /** Whether this host must be present (collective) or is optional. */
     required: boolean("required").notNull().default(true),
+    /**
+     * schedule: weekly hours, with event-specific painted days replacing
+     * individual dates. painted: only painted time counts for this event.
+     */
+    availabilityMode: text("availability_mode").$type<"schedule" | "painted">().notNull().default("schedule"),
     addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.eventTypeId, t.userDid] })],
+);
+
+/** Event-specific availability a host painted for a date (wall clock in `timezone`). */
+export const eventHostAvailability = pgTable(
+  "event_host_availability",
+  {
+    id: text("id").primaryKey(),
+    eventTypeId: text("event_type_id")
+      .notNull()
+      .references(() => eventTypes.id, { onDelete: "cascade" }),
+    userDid: text("user_did")
+      .notNull()
+      .references(() => users.did, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    timezone: text("timezone").notNull(),
+    /** null start/end with unavailable = whole day blocked for this event. */
+    startMinutes: integer("start_minutes"),
+    endMinutes: integer("end_minutes"),
+    unavailable: boolean("unavailable").notNull().default(false),
+  },
+  (t) => [index("event_host_availability_idx").on(t.eventTypeId, t.userDid, t.date)],
 );
 
 /** Invitation-only access. Stored by DID (handles change). */
@@ -557,6 +583,7 @@ export type Team = typeof teams.$inferSelect;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type EventType = typeof eventTypes.$inferSelect;
 export type EventTypeHost = typeof eventTypeHosts.$inferSelect;
+export type EventHostAvailability = typeof eventHostAvailability.$inferSelect;
 export type EventInvitation = typeof eventInvitations.$inferSelect;
 export type Meeting = typeof meetings.$inferSelect;
 export type Booking = typeof bookings.$inferSelect;

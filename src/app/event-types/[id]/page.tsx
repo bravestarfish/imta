@@ -12,11 +12,13 @@ import { deleteEventTypeAction, duplicateEventTypeAction, inviteAction, revokeIn
 import { Badge, Notice, PageHeader } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
 import { EventTypeForm, type HostOption } from "../form";
+import { AvailabilityTab } from "./availability-tab";
+import { getUsersByDids } from "@/lib/users/service";
 
-export default async function EditEventType({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; error?: string }> }) {
+export default async function EditEventType({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; error?: string; week?: string }> }) {
   const user = await getCurrentUser();
   const { id } = await params;
-  const { tab, error } = await searchParams;
+  const { tab, error, week } = await searchParams;
   if (!user) redirect(`/login?next=/event-types/${id}`);
   const et = await db.query.eventTypes.findFirst({ where: eq(schema.eventTypes.id, id) });
   if (!et) notFound();
@@ -56,10 +58,14 @@ export default async function EditEventType({ params, searchParams }: { params: 
       />
       <div className="mb-6 flex gap-4 border-b border-border text-sm">
         <Link href={`/event-types/${id}`} className={`-mb-px border-b-2 px-1 py-2 ${tab !== "invitations" ? "border-accent" : "border-transparent text-muted"}`}>Settings</Link>
+        <Link href={`/event-types/${id}?tab=availability`} className={`-mb-px border-b-2 px-1 py-2 ${tab === "availability" ? "border-accent" : "border-transparent text-muted"}`}>
+          Availability
+        </Link>
         <Link href={`/event-types/${id}?tab=invitations`} className={`-mb-px border-b-2 px-1 py-2 ${tab === "invitations" ? "border-accent" : "border-transparent text-muted"}`}>
           Invitations {invitations.length ? `(${invitations.length})` : ""}
         </Link>
       </div>
+      {tab === "availability" ? <AvailabilityTab et={et} user={user} hosts={hostRows} hostUsers={await getUsersByDids(hostRows.map((h) => h.userDid))} week={week} /> : null}
       {tab === "invitations" ? (
         <div className="space-y-4">
           {error ? <Notice kind="error">{error}</Notice> : null}
@@ -92,7 +98,7 @@ export default async function EditEventType({ params, searchParams }: { params: 
             ))}
           </ul>
         </div>
-      ) : (
+      ) : tab === "availability" ? null : (
         <EventTypeForm
           id={id}
           ownerKind={et.ownerKind}

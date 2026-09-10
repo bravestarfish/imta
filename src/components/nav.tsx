@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { User } from "@/db/schema";
 import { Avatar } from "./ui";
+import { ThemeToggle, type Theme } from "./theme-toggle";
 
 const links = [
   ["/dashboard", "Dashboard"],
@@ -11,7 +12,7 @@ const links = [
   ["/calendars", "Calendars"],
 ];
 
-export function Nav({ user }: { user: User | null }) {
+export function Nav({ user, theme }: { user: User | null; theme: Theme }) {
   return (
     <header className="border-b border-border bg-card/60 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
@@ -28,6 +29,7 @@ export function Nav({ user }: { user: User | null }) {
               ))}
             </nav>
             <div className="ml-auto flex items-center gap-3">
+              <ThemeToggle initial={theme} />
               <Link href="/invitations" className="text-sm text-muted hover:text-foreground">Invitations</Link>
               <Link href="/settings" className="flex items-center gap-2 text-sm">
                 <Avatar user={user} size={28} />
@@ -36,7 +38,8 @@ export function Nav({ user }: { user: User | null }) {
             </div>
           </>
         ) : (
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle initial={theme} />
             <Link href="/login" className="btn-primary">Sign in</Link>
           </div>
         )}

@@ -78,8 +78,9 @@ export async function availableSlots(et: EventType, window: Interval, now = Date
   }
 
   const availability = await hostAvailabilities(
-    hosts.map((h) => ({ did: h.userDid, scheduleId: h.scheduleId })),
+    hosts.map((h) => ({ did: h.userDid, scheduleId: h.scheduleId, availabilityMode: h.availabilityMode })),
     window,
+    et.id,
   );
   const slots = generateSlots(availability, rules, window, now, perDay);
 

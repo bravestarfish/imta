@@ -2,13 +2,14 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { savePaintedDaysAction } from "@/app/actions/availability";
+import { savePaintedDaysAction, saveEventPaintAction } from "@/app/actions/availability";
 
 export type PainterDay = { date: string; label: string; isPast: boolean; cells: number[]; weeklyCells: number[]; busyCells: number[] };
+export type PainterTarget = { kind: "schedule"; scheduleId: string } | { kind: "event"; eventTypeId: string };
 
 const hm = (cell: number) => `${String(Math.floor((cell * 30) / 60)).padStart(2, "0")}:${cell % 2 ? "30" : "00"}`;
 
-export function WeekPainter({ scheduleId, days }: { scheduleId: string; days: PainterDay[] }) {
+export function WeekPainter({ target, days, resetLabel = "weekly" }: { target: PainterTarget; days: PainterDay[]; resetLabel?: string }) {
   const [state, setState] = useState<Record<string, Set<number>>>(() => Object.fromEntries(days.map((d) => [d.date, new Set(d.cells)])));
   const [allHours, setAllHours] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -71,7 +72,8 @@ export function WeekPainter({ scheduleId, days }: { scheduleId: string; days: Pa
 
   const save = () =>
     start(async () => {
-      const res = await savePaintedDaysAction({ scheduleId, days: dirty.map((d) => ({ date: d.date, cells: [...state[d.date]] })) });
+      const payload = dirty.map((d) => ({ date: d.date, cells: [...state[d.date]] }));
+      const res = target.kind === "schedule" ? await savePaintedDaysAction({ scheduleId: target.scheduleId, days: payload }) : await saveEventPaintAction({ eventTypeId: target.eventTypeId, days: payload });
       setMessage(res.ok ? { kind: "ok", text: "Saved." } : { kind: "error", text: res.error });
       if (res.ok) router.refresh();
     });
@@ -103,7 +105,7 @@ export function WeekPainter({ scheduleId, days }: { scheduleId: string; days: Pa
             <div key={d.date} className={`pb-1 text-center text-xs ${d.isPast ? "text-muted" : "font-medium"}`}>
               {d.label}
               <button type="button" className="block w-full text-[10px] text-muted underline" onClick={() => resetDay(d.date)} disabled={d.isPast}>
-                weekly
+                {resetLabel}
               </button>
             </div>
           ))}

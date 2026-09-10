@@ -64,7 +64,7 @@ export default async function ScheduleCalendar({ params, searchParams }: { param
         }
       />
       <p className="mb-3 text-sm text-muted">{weekStart.toFormat("d LLL")} – {weekStart.plus({ days: 6 }).toFormat("d LLL yyyy")}</p>
-      <WeekPainter key={weekStart.toISODate()} scheduleId={id} days={days} />
+      <WeekPainter key={weekStart.toISODate()} target={{ kind: "schedule", scheduleId: id }} days={days} />
     </div>
   );
 }

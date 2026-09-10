@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { normalize, type Interval } from "./intervals";
+import { normalize, subtract, type Interval } from "./intervals";
 
 export type WeeklyRule = { weekday: number; startMinutes: number; endMinutes: number };
 export type DateOverride = {
@@ -85,4 +85,42 @@ export function validateRules(rules: WeeklyRule[]): string | null {
     }
   }
   return null;
+}
+
+export type DateWindows = { date: string; timezone: string; startMinutes: number | null; endMinutes: number | null; unavailable?: boolean };
+
+/** Expand painted date windows (each in its own timezone) to UTC intervals inside `window`. */
+export function expandDateWindows(rows: DateWindows[], window: Interval): Interval[] {
+  const out: Interval[] = [];
+  for (const r of rows) {
+    if (r.unavailable || r.startMinutes == null || r.endMinutes == null) continue;
+    const day = DateTime.fromISO(r.date, { zone: r.timezone }).startOf("day");
+    if (!day.isValid) continue;
+    out.push(dayWindow(day, r.startMinutes, r.endMinutes));
+  }
+  return normalize(out).flatMap((i) => {
+    const s = Math.max(i.start, window.start);
+    const e = Math.min(i.end, window.end);
+    return s < e ? [{ start: s, end: e }] : [];
+  });
+}
+
+/**
+ * Replace the availability of specific local dates with painted windows:
+ * remove everything on those dates, then add the painted windows.
+ */
+export function applyDateWindows(base: Interval[], rows: DateWindows[], window: Interval): Interval[] {
+  if (!rows.length) return base;
+  const wholeDays: Interval[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const key = `${r.timezone}|${r.date}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const day = DateTime.fromISO(r.date, { zone: r.timezone }).startOf("day");
+    if (!day.isValid) continue;
+    wholeDays.push({ start: day.toMillis(), end: day.plus({ days: 1 }).startOf("day").toMillis() });
+  }
+  const cleared = subtract(base, wholeDays);
+  return normalize([...cleared, ...expandDateWindows(rows, window)]);
 }

@@ -8,6 +8,13 @@
       "when": 1789027478592,
       "tag": "0000_black_wallow",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789042860269,
+      "tag": "0001_bouncy_jackpot",
+      "breakpoints": true
     }
   ]
 }

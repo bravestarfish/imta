@@ -1,7 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db, schema } from "@/db";
 import { newId } from "@/lib/ids";
-import { expandSchedule, validateRules, type Schedule, type WeeklyRule, type DateOverride } from "@/lib/scheduling/availability";
+import { expandSchedule, validateRules, applyDateWindows, expandDateWindows, type Schedule, type WeeklyRule, type DateOverride } from "@/lib/scheduling/availability";
 import type { Interval } from "@/lib/scheduling/intervals";
 import type { HostAvailability } from "@/lib/scheduling/slots";
 import { busyFor } from "@/lib/calendar/service";
@@ -91,11 +92,22 @@ export async function deleteSchedule(userDid: string, id: string): Promise<void>
  * busy blocks from calendars and existing bookings).
  */
 export async function hostAvailabilities(
-  hosts: { did: string; scheduleId?: string | null }[],
+  hosts: { did: string; scheduleId?: string | null; availabilityMode?: "schedule" | "painted" }[],
   window: Interval,
+  eventTypeId?: string,
 ): Promise<HostAvailability[]> {
   if (!hosts.length) return [];
   const dids = hosts.map((h) => h.did);
+  const painted = eventTypeId
+    ? await db.query.eventHostAvailability.findMany({
+        where: and(
+          eq(schema.eventHostAvailability.eventTypeId, eventTypeId),
+          inArray(schema.eventHostAvailability.userDid, dids),
+          gte(schema.eventHostAvailability.date, DateTime.fromMillis(window.start).minus({ days: 1 }).toISODate()!),
+          lte(schema.eventHostAvailability.date, DateTime.fromMillis(window.end).plus({ days: 1 }).toISODate()!),
+        ),
+      })
+    : [];
   const schedules = await db.query.availabilitySchedules.findMany({ where: inArray(schema.availabilitySchedules.userDid, dids) });
   const ids = schedules.map((s) => s.id);
   const rules = ids.length ? await db.query.availabilityRules.findMany({ where: inArray(schema.availabilityRules.scheduleId, ids) }) : [];
@@ -114,7 +126,12 @@ export async function hostAvailabilities(
           overrides: overrides.filter((o) => o.scheduleId === chosen.id).map((o) => ({ date: o.date, startMinutes: o.startMinutes, endMinutes: o.endMinutes, unavailable: o.unavailable })),
         }
       : { timezone: "UTC", rules: [], overrides: [] };
-    return { did: h.did, available: expandSchedule(sched, window), busy: busy.get(h.did) ?? [] };
+    const mine = painted.filter((p) => p.userDid === h.did);
+    const available =
+      h.availabilityMode === "painted"
+        ? expandDateWindows(mine, window)
+        : applyDateWindows(expandSchedule(sched, window), mine, window);
+    return { did: h.did, available, busy: busy.get(h.did) ?? [] };
   });
 }
 
@@ -145,4 +162,67 @@ export async function savePaintedDays(userDid: string, scheduleId: string, days:
     }
   });
   return null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Event-specific painted availability                                         */
+/* -------------------------------------------------------------------------- */
+
+/** The timezone a host paints in: their default schedule's, else their profile's. */
+export async function hostPaintZone(userDid: string): Promise<string> {
+  const def = await db.query.availabilitySchedules.findFirst({ where: and(eq(schema.availabilitySchedules.userDid, userDid), eq(schema.availabilitySchedules.isDefault, true)) });
+  if (def) return def.timezone;
+  const u = await db.query.users.findFirst({ where: eq(schema.users.did, userDid), columns: { timezone: true } });
+  return u?.timezone ?? "UTC";
+}
+
+export async function eventPaintRows(eventTypeId: string, userDid: string, from: string, to: string) {
+  return db.query.eventHostAvailability.findMany({
+    where: and(
+      eq(schema.eventHostAvailability.eventTypeId, eventTypeId),
+      eq(schema.eventHostAvailability.userDid, userDid),
+      gte(schema.eventHostAvailability.date, from),
+      lte(schema.eventHostAvailability.date, to),
+    ),
+  });
+}
+
+/** Replace the painted windows of the given dates for this host and event. */
+export async function saveEventPaint(eventTypeId: string, userDid: string, timezone: string, days: { date: string; cells: number[] }[]): Promise<string | null> {
+  const { cellsToWindows } = await import("./painter");
+  const host = await db.query.eventTypeHosts.findFirst({ where: and(eq(schema.eventTypeHosts.eventTypeId, eventTypeId), eq(schema.eventTypeHosts.userDid, userDid)) });
+  if (!host) return "You are not a host of this event";
+  await db.transaction(async (tx) => {
+    for (const day of days) {
+      await tx
+        .delete(schema.eventHostAvailability)
+        .where(and(eq(schema.eventHostAvailability.eventTypeId, eventTypeId), eq(schema.eventHostAvailability.userDid, userDid), eq(schema.eventHostAvailability.date, day.date)));
+      const windows = cellsToWindows(day.cells);
+      const rows = windows.length
+        ? windows.map((w) => ({ id: newId("eha"), eventTypeId, userDid, date: day.date, timezone, startMinutes: w.startMinutes, endMinutes: w.endMinutes, unavailable: false }))
+        : [{ id: newId("eha"), eventTypeId, userDid, date: day.date, timezone, startMinutes: null, endMinutes: null, unavailable: true }];
+      await tx.insert(schema.eventHostAvailability).values(rows);
+    }
+  });
+  return null;
+}
+
+/** Forget every painted day for this host and event (back to the schedule). */
+export async function clearEventPaint(eventTypeId: string, userDid: string): Promise<void> {
+  await db.delete(schema.eventHostAvailability).where(and(eq(schema.eventHostAvailability.eventTypeId, eventTypeId), eq(schema.eventHostAvailability.userDid, userDid)));
+}
+
+export async function setHostAvailabilityMode(eventTypeId: string, userDid: string, mode: "schedule" | "painted"): Promise<void> {
+  await db.update(schema.eventTypeHosts).set({ availabilityMode: mode }).where(and(eq(schema.eventTypeHosts.eventTypeId, eventTypeId), eq(schema.eventTypeHosts.userDid, userDid)));
+}
+
+/** Per host: how many future dates they painted for this event. */
+export async function eventPaintSummary(eventTypeId: string): Promise<Map<string, number>> {
+  const rows = await db.query.eventHostAvailability.findMany({
+    where: and(eq(schema.eventHostAvailability.eventTypeId, eventTypeId), gte(schema.eventHostAvailability.date, DateTime.now().toISODate()!)),
+    columns: { userDid: true, date: true },
+  });
+  const out = new Map<string, Set<string>>();
+  for (const r of rows) (out.get(r.userDid) ?? out.set(r.userDid, new Set()).get(r.userDid)!).add(r.date);
+  return new Map([...out].map(([k, v]) => [k, v.size]));
 }
