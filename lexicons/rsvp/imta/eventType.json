@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "rsvp.imta.eventType",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A bookable meeting type (e.g. '30 minute intro call'). Only published for public event types.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["title", "durationMinutes", "bookingUrl", "hosts", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxGraphemes": 120, "maxLength": 1200 },
+          "description": { "type": "string", "maxGraphemes": 2000, "maxLength": 20000 },
+          "durationMinutes": { "type": "integer", "minimum": 5, "maximum": 1440 },
+          "bookingUrl": { "type": "string", "format": "uri" },
+          "hosts": {
+            "type": "array",
+            "description": "DIDs of the organizers who can host this meeting type.",
+            "items": { "type": "string", "format": "did" },
+            "maxLength": 12
+          },
+          "team": { "type": "string", "description": "Team name, if the type belongs to a team." },
+          "mode": {
+            "type": "string",
+            "knownValues": ["rsvp.imta.eventType#collective", "rsvp.imta.eventType#anyone", "rsvp.imta.eventType#threshold"],
+            "description": "Which hosts attend: all of them, any one of them, or at least N of them."
+          },
+          "capacity": { "type": "integer", "minimum": 1, "description": "Seats per session. 1 for one-to-one meetings." },
+          "location": {
+            "type": "string",
+            "knownValues": ["rsvp.imta.eventType#video", "rsvp.imta.eventType#inperson", "rsvp.imta.eventType#phone"]
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "collective": { "type": "token", "description": "All hosts attend every meeting." },
+    "anyone": { "type": "token", "description": "One available host attends." },
+    "threshold": { "type": "token", "description": "At least N hosts attend." },
+    "video": { "type": "token" },
+    "inperson": { "type": "token" },
+    "phone": { "type": "token" }
+  }
+}

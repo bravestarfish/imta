@@ -1,0 +1,59 @@
+# Production-ish stack: Caddy (TLS) -> web, plus worker and Postgres.
+# 1. cp .env.example .env and fill it in
+# 2. docker compose up -d --build
+# 3. docker compose run --rm worker pnpm db:migrate
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:-imta.rsvp}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://imta:${POSTGRES_PASSWORD:-imta}@db:5432/imta
+    depends_on:
+      db: { condition: service_healthy }
+    expose: ["3000"]
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://imta:${POSTGRES_PASSWORD:-imta}@db:5432/imta
+    depends_on:
+      db: { condition: service_healthy }
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: imta
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-imta}
+      POSTGRES_DB: imta
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imta"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

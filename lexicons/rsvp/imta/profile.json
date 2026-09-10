@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "rsvp.imta.profile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A public booking profile. Opt-in; points at the account's public booking page.",
+      "key": "literal:self",
+      "record": {
+        "type": "object",
+        "required": ["bookingUrl", "createdAt"],
+        "properties": {
+          "displayName": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
+          "bio": { "type": "string", "maxGraphemes": 512, "maxLength": 5120 },
+          "bookingUrl": { "type": "string", "format": "uri", "description": "Public booking page for this account." },
+          "timezone": { "type": "string", "description": "IANA time zone the organizer usually works in." },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
